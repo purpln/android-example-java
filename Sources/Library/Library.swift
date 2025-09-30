@@ -3,6 +3,7 @@ import AndroidAssets
 import Java
 import JavaRuntime
 import Synchronization
+import TranslationLayer
 
 @_silgen_name("Java_org_company_app_MainActivity_message")
 public func message(environment: JNIEnvironment, activity: jobject?) -> jstring? {
@@ -18,7 +19,7 @@ public func message(environment: JNIEnvironment, activity: jobject?) -> jstring?
         print("from Java in Swift:", string)
         
         guard let pointer = AAssetManager_fromJava(environment, assets.holder.reference) else { return nil }
-        let asset = try Asset(.init(pointer), name: "document.txt").bytes
+        let asset = try Asset(AssetManager(pointer), name: "document.txt").bytes
         
         let document = String(decoding: asset, as: UTF8.self)
         return document.jni(in: environment)
@@ -27,38 +28,43 @@ public func message(environment: JNIEnvironment, activity: jobject?) -> jstring?
     }
 }
 
-public class Context: JavaObject {
-    override public class var javaClassName: String {
-        "android.content.Context"
+@_silgen_name("Java_org_company_app_MainActivity_toggle")
+public func toggle(environment: JNIEnvironment, activity: jobject?) {
+    guard let activity = activity else { return }
+    do {
+        let activity = try MainActivity(jni: activity, in: environment)
+        try activity.toggleKeyboard()
+    } catch {
+        print(error)
     }
 }
 
-public class Activity: Context {
-    override public class var javaClassName: String {
-        "android.app.Activity"
-    }
-}
+nonisolated(unsafe)
+var isKeyboardVisible: Bool = false
 
-public extension Activity {
-    func getAssets() throws -> AssetManager {
-        try call(method: "getAssets")
+extension Activity {
+    func toggleKeyboard() throws {
+        if isKeyboardVisible {
+            try hideKeyboard()
+        } else {
+            try showKeyboard()
+        }
+        isKeyboardVisible.toggle()
     }
-}
-
-public class MainActivity: Activity {
-    override public class var javaClassName: String {
-        "org.company.app.MainActivity"
+    
+    func showKeyboard() throws {
+        let view = try getWindow().getDecorView()
+        
+        let service = Context[environment, "INPUT_METHOD_SERVICE"] as String
+        
+        try getSystemService(service).as(InputMethodManager.self)!.showSoftInput(view)
     }
-}
 
-public extension MainActivity {
-    func string() throws -> String {
-        try call(method: "string")
-    }
-}
-
-public class AssetManager: JavaObject {
-    override public class var javaClassName: String {
-        "android.content.res.AssetManager"
+    func hideKeyboard() throws {
+        let binder = try getWindow().getDecorView().getWindowToken()
+        
+        let service = Context[environment, "INPUT_METHOD_SERVICE"] as String
+        
+        try getSystemService(service).as(InputMethodManager.self)!.hideSoftInputFromWindow(binder)
     }
 }

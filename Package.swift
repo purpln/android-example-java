@@ -8,15 +8,18 @@ let package = Package(name: "Library", products: [
     .package(url: "https://github.com/purpln/android-assets.git", branch: "main"),
     .package(url: "https://github.com/purpln/android-log.git", branch: "main"),
     .package(url: "https://github.com/purpln/ndk.git", branch: "main"),
-    //.package(url: "https://github.com/purpln/java.git", branch: "main"),
-    .package(path: "~/github/java"),
+    .package(url: "https://github.com/purpln/java.git", branch: "main"),
 ], targets: [
     .target(name: "Library", dependencies: [
         .product(name: "AndroidAssets", package: "android-assets"),
         .product(name: "AndroidLog", package: "android-log"),
         .product(name: "NDK", package: "ndk"),
         .product(name: "Java", package: "java"),
+        "TranslationLayer",
     ], linkerSettings: [
         .linkedLibrary("android"),
     ]),
+    .target(name: "TranslationLayer", dependencies: [
+        .product(name: "Java", package: "java"),
+    ])
 ])

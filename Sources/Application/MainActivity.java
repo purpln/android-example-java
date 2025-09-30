@@ -41,4 +41,11 @@ public class MainActivity extends Activity {
     String string() {
         return "hello world!";
     }
+    
+    @Override
+    public void onBackPressed() {
+        toggle();
+    }
+    
+    public native void toggle();
 }
